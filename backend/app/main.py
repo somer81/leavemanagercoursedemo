@@ -7,11 +7,15 @@ import os
 from pathlib import Path
 
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 
 from app.api.health import health_router
 from app.repositories.connection import connection_factory
 from app.repositories.health_repository import SqliteHealthProbe
 from app.services.health_service import HealthService
+
+# Only the public folder is served; frontend/tests stays private.
+FRONTEND_DIR = Path(__file__).resolve().parents[2] / "frontend" / "public"
 
 
 def create_app(db_path: str) -> FastAPI:
@@ -19,6 +23,7 @@ def create_app(db_path: str) -> FastAPI:
 
     app = FastAPI(title="İzin Yöneticisi")
     app.include_router(health_router(lambda: health_service))
+    app.mount("/", StaticFiles(directory=FRONTEND_DIR, html=True), name="frontend")
     return app
 
 
