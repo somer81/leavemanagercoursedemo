@@ -1,5 +1,6 @@
 """Login, identity, session lifetime and logout over HTTP (spec 0002, AC-1..AC-6, AC-8)."""
 
+import hashlib
 import logging
 from datetime import timedelta
 
@@ -174,3 +175,16 @@ def test_post_without_json_is_rejected(auth_app: AuthApp) -> None:
 
     assert response.status_code == 415
     assert response.json()["error"]["code"] == "UNSUPPORTED_MEDIA_TYPE"
+
+
+def test_session_token_is_stored_only_as_its_hash(auth_app: AuthApp) -> None:
+    auth_app.add_user("mert.yilmaz", "Mert Yılmaz (demo)")
+    login(auth_app, "mert.yilmaz")
+    token = auth_app.client.cookies.get("session") or ""
+
+    with auth_app.database.connect() as connection:
+        stored = [row[0] for row in connection.execute("SELECT token_hash FROM sessions")]
+
+    assert token
+    assert stored == [hashlib.sha256(token.encode("utf-8")).hexdigest()]
+    assert token not in stored
