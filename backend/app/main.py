@@ -10,7 +10,7 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
 from app.api.health import health_router
-from app.repositories.connection import connection_factory
+from app.repositories.connection import Database
 from app.repositories.health_repository import SqliteHealthProbe
 from app.services.health_service import HealthService
 
@@ -19,7 +19,7 @@ FRONTEND_DIR = Path(__file__).resolve().parents[2] / "frontend" / "public"
 
 
 def create_app(db_path: str) -> FastAPI:
-    health_service = HealthService(SqliteHealthProbe(connection_factory(db_path)))
+    health_service = HealthService(SqliteHealthProbe(Database(db_path)))
 
     # No public API docs: only login and health are served without a session (docs/security.md).
     app = FastAPI(title="İzin Yöneticisi", docs_url=None, redoc_url=None, openapi_url=None)
