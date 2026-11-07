@@ -57,6 +57,7 @@
 - `sqlite3` bağlantıyı başka thread'den kullanmayı reddeder, `TestClient` ayrı thread'de çalışır — test bağlantısında `check_same_thread=False` — from bootstrap 2026-11-07.
 - `sqlite3`'ün varsayılan tarih adapter'ları Python 3.12'den beri deprecated — tarihleri repository'de açıkça ISO metne ve geri çevir, `detect_types` kullanma — from bootstrap 2026-11-07.
 - Makinedeki varsayılan `python3` anaconda'nınkidir — venv'i `python3.13 -m venv .venv` ile kur, check her zaman `.venv/bin/python -m …` çağırır — from bootstrap 2026-11-07.
+- macOS'ta `/bin/sh` bash 3.2'dir ve ANEW betiklerini ayrıştıramaz (`$( … )` içindeki `case` dalları, syntax error) — bu makinede `dash ./scripts/check` (`--fast`), `dash ./scripts/doctor`, `dash ./scripts/residue` kullan; CI (Ubuntu, sh = dash) etkilenmez; çekirdek betikler yerelde yamanmaz, upstream'e bildirildi — from bootstrap 2026-11-07.
 - pytest tanımsız marker'ı sessizce kabul eder (yazım hatası testi yanlış profile düşürür) — `--strict-markers` ve marker'ları `pyproject.toml`'da tanımla — from bootstrap 2026-11-07.
 
 ## Enforced by tooling
