@@ -3,9 +3,10 @@
 import hashlib
 import logging
 from datetime import timedelta
+from pathlib import Path
 
 import pytest
-from conftest import PASSWORD, START, AuthApp
+from conftest import PASSWORD, START, AuthApp, ClientFactory
 
 from app.domain.auth import Role
 
@@ -188,3 +189,18 @@ def test_session_token_is_stored_only_as_its_hash(auth_app: AuthApp) -> None:
     assert token
     assert stored == [hashlib.sha256(token.encode("utf-8")).hexdigest()]
     assert token not in stored
+
+
+def test_auth_with_unavailable_database_returns_error_envelope(
+    client_for: ClientFactory, tmp_path: Path
+) -> None:
+    # A directory is not an openable SQLite file: a real sqlite3 error on the auth path.
+    response = client_for(str(tmp_path)).post(
+        "/api/auth/login", json={"username": "mert.yilmaz", "password": PASSWORD}
+    )
+
+    assert response.status_code == 503
+    assert response.json() == {
+        "error": {"code": "DATA_STORE_UNAVAILABLE", "message": "Hizmet şu anda kullanılamıyor."}
+    }
+    assert str(tmp_path) not in response.text

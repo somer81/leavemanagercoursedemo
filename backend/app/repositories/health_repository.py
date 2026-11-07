@@ -1,8 +1,8 @@
-"""Data-store probe: a trivial read proves the database answers."""
+"""Data-store probe: a trivial read proves the database answers.
 
-import sqlite3
+Database.connect turns any sqlite3 error into DataStoreUnavailable, which the service reports.
+"""
 
-from app.domain.errors import DataStoreUnavailable
 from app.repositories.connection import Database
 
 
@@ -11,8 +11,5 @@ class SqliteHealthProbe:
         self._database = database
 
     def ping(self) -> None:
-        try:
-            with self._database.connect() as connection:
-                connection.execute("SELECT 1").fetchone()
-        except sqlite3.Error as error:
-            raise DataStoreUnavailable() from error
+        with self._database.connect() as connection:
+            connection.execute("SELECT 1").fetchone()

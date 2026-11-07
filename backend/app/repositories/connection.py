@@ -3,8 +3,10 @@
 import sqlite3
 import threading
 from collections.abc import Iterator
-from contextlib import contextmanager
+from contextlib import contextmanager, suppress
 from pathlib import Path
+
+from app.domain.errors import DataStoreUnavailable
 
 SCHEMA = (Path(__file__).parent / "schema.sql").read_text(encoding="utf-8")
 
@@ -23,14 +25,20 @@ class Database:
         self._lock = threading.RLock()
 
     def _open(self) -> sqlite3.Connection:
-        # check_same_thread=False: TestClient and the server call from worker threads.
-        connection = sqlite3.connect(self._path, check_same_thread=False)
-        connection.execute("PRAGMA foreign_keys = ON")
+        try:
+            # check_same_thread=False: TestClient and the server call from worker threads.
+            connection = sqlite3.connect(self._path, check_same_thread=False)
+            connection.execute("PRAGMA foreign_keys = ON")
+        except sqlite3.Error as error:
+            raise DataStoreUnavailable() from error
         return connection
 
     @contextmanager
     def connect(self) -> Iterator[sqlite3.Connection]:
-        """Yield a connection; commit on success, roll back on error."""
+        """Yield a connection; commit on success, roll back on error.
+
+        Every sqlite3 error leaves as DataStoreUnavailable, so callers never see driver details.
+        """
         if self._path == ":memory:":
             with self._lock:
                 if self._shared is None:
@@ -46,8 +54,13 @@ class Database:
                 self._schema_ready = True
             yield connection
             connection.commit()
+        except sqlite3.Error as error:
+            with suppress(sqlite3.Error):
+                connection.rollback()
+            raise DataStoreUnavailable() from error
         except BaseException:
-            connection.rollback()
+            with suppress(sqlite3.Error):
+                connection.rollback()
             raise
         finally:
             if connection is not self._shared:
