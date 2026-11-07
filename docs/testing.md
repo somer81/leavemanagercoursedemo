@@ -1,6 +1,7 @@
 # Testing
 
-> **Template — filled during bootstrap.**
+> Bootstrap 2026-11-07'de karara bağlandı. Proje kararları "Frameworks & layout" ve "What must be
+> tested" altında; diğer bölümler ANEW'in ortak test kurallarıdır.
 
 ## The contract
 - Every acceptance criterion maps to at least one test (criterion ↔ test map lives in the plan).
@@ -8,11 +9,31 @@
 - The whole suite runs inside `scripts/check` — one command, everywhere.
 
 ## Frameworks & layout
-<!-- Test framework(s), where tests live, naming pattern. -->
+
+| Katman | Kanıtladığı | Araç | Konum | Profil |
+|---|---|---|---|---|
+| Birim | BR-1…BR-9 ve yetki kontrolleri; servisler sahte repository + sabit `Clock` ile | pytest | `backend/tests/unit/` | `[fast]` |
+| Entegrasyon | API → servis → gerçek SQLite (test başına yeni `:memory:` DB); HTTP kodları, hata gövdesi, SQL | pytest + `TestClient`, `@pytest.mark.integration` | `backend/tests/integration/` | full |
+| Frontend bileşen | Ekran durumları (boş, yükleniyor, hata, başarılı, yetkisiz) ve saf JS mantığı; `fetch` stub'lanır | `node --test` + jsdom | `frontend/tests/` | `[fast]` |
+| e2e | Yok (Test layers 2) | — | — | — |
+
+- Hızlı/tam ayrımı **seçiciyle**: `pytest -m "not integration"` ve `pytest -m integration`
+  (Two speeds 4). `integration` marker'ı `pyproject.toml`'da tanımlı, `--strict-markers` açık.
+- Test dosyaları `test_*.py` / `*.test.js`; test adları `docs/conventions.md` "Naming"e uyar.
+- Coverage yüzdesi kapısı yok; kural, her kabul kriterinin en az bir teste bağlanmasıdır.
+- **Determinizm (bu stack):** servis "bugün"ü `Clock`'tan alır, testlerde sabit tarih; check
+  adımları `TZ=UTC` ile çalışır; test ve seed verisi uydurmadır (KVKK); frontend animasyon ve geçiş
+  kullanmaz, CSS'te `@media (prefers-reduced-motion: reduce)` ile de kapatılır; jsdom pencereleri
+  her testte `window.close()` ile kapatılır (açık zamanlayıcı `node --test`'i asılı bırakır).
+- **UI kanıtı:** SHIP ekran görüntülerini ajan Playwright for Python ile headless alır — check
+  dışında, repo dışı geçici dizinde; araç test değildir (Evidence for UI criteria).
 
 ## What must be tested
-<!-- e.g. every business rule (BR-n), every boundary/forbidden dependency; the e2e journeys and
-     budget, if the project has e2e at all (Test layers). -->
+- Her iş kuralı (BR-n) için en az bir olumlu ve bir olumsuz test.
+- Her yasak bağımlılık (`docs/architecture.md` 1–4) import-linter sözleşmesiyle.
+- Hassas alanlar: her uç nokta için "başkasının verisine / işlemine erişim 403 döner" testi; oturum
+  olmadan erişim reddedilir.
+- e2e yok; bütçe 0 yolculuk, 0 dakika.
 
 ## Test layers
 1. **The cheapest test that proves the criterion.** Unit first, then component or integration

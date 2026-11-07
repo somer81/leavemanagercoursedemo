@@ -1,6 +1,7 @@
 # Git
 
-> **Template — adjust at bootstrap.** Defaults below are safe; loosen consciously, not accidentally.
+> Bootstrap 2026-11-07: varsayılanlar aynen kabul edildi. Commit mesajları ve branch adları İngilizce
+> (`docs/conventions.md` "Language").
 
 ## Branching
 - `feature/<spec-no>-<short-name>` — **no branch without a spec.** Also for CHANGE-lane mini-specs.
@@ -31,11 +32,9 @@
 - Force push, history rewriting on shared branches. Undo = `git revert` (see recovery R-11).
 
 ## Trivial changes
-<!-- Set at bootstrap. Applies only to requests the change-request triage rubric
-     (workflows/change-request.md) classifies as TRIVIAL: no acceptance criterion changes, no shared code. -->
-- Policy: **(1) PR + one reviewer, no spec** — default; alternatives: (2) direct commit allowed on a
-  `trivial/<short-name>` branch · (3) everything goes through a mini-spec (`specs/TEMPLATE-mini.md`;
-  no ANALYZE here: run the self-critique pass of `prompts/spec.md`, then `Self-critique: done`).
+- Policy: **(1) PR + one reviewer, no spec** — bootstrap 2026-11-07'de seçildi. Yalnızca change-request
+  triage rubric'inin (`workflows/change-request.md`) TRIVIAL saydığı işler: hiçbir kabul kriteri değişmez,
+  paylaşılan koda dokunulmaz. Branch: `trivial/<short-name>`.
 - Always: one narrow commit, `scripts/check` green. A second file or a new test means re-triage.
 
 ## Pull requests
