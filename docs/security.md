@@ -24,7 +24,8 @@
   düz parola asla. Sunucu tarafı oturum: `secrets.token_urlsafe` token, SQLite'ta saklanır; cookie
   `HttpOnly`, `SameSite=Strict`, production'da `Secure`; 8 saatte geçersiz olur, çıkışta silinir.
   Giriş hatası tek mesaj: "kullanıcı adı veya parola hatalı".
-- **AuthZ (hassas alan):** varsayılan red — `/api/auth/login` dışındaki her uç oturum ister.
+- **AuthZ (hassas alan):** varsayılan red — oturum gerektirmeyen uçlar yalnızca giriş
+  (`/api/auth/login`) ve sağlık (`/api/health`, yalnızca durum alanları döner; spec 0001 R-3); diğer her uç oturum ister.
   Yetki kontrolü **yalnızca servis katmanında**. Çalışan yalnızca kendi verisini görür; Yönetici
   yalnızca kendi ekibinin taleplerini görür ve onaylar/reddeder; Admin izin türlerini ve hakları
   yönetir, talep onaylamaz; kimse kendi talebini onaylayamaz (BR-4). Başkasının kaydına erişim 403.

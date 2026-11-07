@@ -38,6 +38,8 @@
 - API katmanında **tek** exception handler bunları eşler: 422 kural ihlali, 403 yetkisiz,
   404 bulunamadı, 409 çakışma / geçersiz durum geçişi.
 - Hata gövdesi her zaman: `{"error": {"code": "INSUFFICIENT_BALANCE", "message": "<Türkçe mesaj>"}}`.
+  Tek istisna: sağlık ucu bir hata değil durum raporudur; sorunlu durumda 503 ile
+  `{"status": "unavailable", "database": "unavailable"}` döner (spec 0001).
 - Kullanıcıya stack trace, SQL, dosya yolu veya başka bir çalışanın verisi asla sızmaz. Beklenmeyen
   hata → 500 + genel mesaj; ayrıntı yalnızca sunucu logunda, kişisel veri içermeden (`docs/security.md`).
 
@@ -58,11 +60,11 @@
 - `sqlite3`'ün varsayılan tarih adapter'ları Python 3.12'den beri deprecated — tarihleri repository'de açıkça ISO metne ve geri çevir, `detect_types` kullanma — from bootstrap 2026-11-07.
 - Makinedeki varsayılan `python3` anaconda'nınkidir — venv'i `python3.13 -m venv .venv` ile kur, check her zaman `.venv/bin/python -m …` çağırır — from bootstrap 2026-11-07.
 - macOS'ta `/bin/sh` bash 3.2'dir ve ANEW betiklerini ayrıştıramaz (`$( … )` içindeki `case` dalları, syntax error) — bu makinede `dash ./scripts/check` (`--fast`), `dash ./scripts/doctor`, `dash ./scripts/residue` kullan; residue check'i içeride `sh` ile çağırır, bu yüzden PATH'in başına `sh → /bin/dash` symlink'i olan bir dizin koy (`PATH="<dizin>:$PATH" dash ./scripts/residue`); CI (Ubuntu, sh = dash) etkilenmez; çekirdek betikler yerelde yamanmaz, upstream'e bildirildi — from bootstrap 2026-11-07.
-- pytest tanımsız marker'ı sessizce kabul eder (yazım hatası testi yanlış profile düşürür) — `--strict-markers` ve marker'ları `pyproject.toml`'da tanımla — from bootstrap 2026-11-07.
 
 ## Enforced by tooling
-Walking skeleton ile devreye girer (`scripts/check.conf`):
-- ruff: PEP 8 isimlendirme, import sırası, format.
+`scripts/check.conf` adımları (spec 0001):
+- ruff: PEP 8 isimlendirme, import sırası, format, güvenlik kuralları (`S`); satır 100 karakter.
+  N818 kapalı: domain hata adları bu belgede sabit (`InsufficientBalance`…).
 - mypy `--strict`: tip doğruluğu.
-- import-linter: `docs/architecture.md` yasak bağımlılıklar 1–4.
-- pytest `--strict-markers`: tanımsız marker hatası (Known traps, son madde buraya taşınır).
+- import-linter: `docs/architecture.md` yasak bağımlılıklar 1–4 (`pyproject.toml` sözleşmeleri).
+- pytest `--strict-markers`: tanımsız marker hata verir (eski Known traps maddesi).
