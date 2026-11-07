@@ -204,3 +204,13 @@ def test_auth_with_unavailable_database_returns_error_envelope(
         "error": {"code": "DATA_STORE_UNAVAILABLE", "message": "Hizmet şu anda kullanılamıyor."}
     }
     assert str(tmp_path) not in response.text
+
+
+@pytest.mark.parametrize("method", ["PUT", "PATCH", "DELETE"])
+def test_state_changing_methods_without_json_are_rejected(auth_app: AuthApp, method: str) -> None:
+    response = auth_app.client.request(
+        method, "/api/auth/me", content="x", headers={"Content-Type": "text/plain"}
+    )
+
+    assert response.status_code == 415
+    assert response.json()["error"]["code"] == "UNSUPPORTED_MEDIA_TYPE"

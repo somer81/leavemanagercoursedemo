@@ -42,13 +42,16 @@ async def _validation_error(_: Request, __: Exception) -> JSONResponse:
     return error_response(422, "INVALID_INPUT", "Geçersiz giriş.")
 
 
+SAFE_METHODS = frozenset({"GET", "HEAD", "OPTIONS"})
+
+
 async def _json_only(
     request: Request, call_next: Callable[[Request], Awaitable[Response]]
 ) -> Response:
-    # CSRF: state-changing API calls accept application/json only (docs/security.md).
+    # CSRF: every state-changing API call (not GET/HEAD/OPTIONS) is JSON only (docs/security.md).
     content_type = request.headers.get("content-type", "")
     if (
-        request.method == "POST"
+        request.method not in SAFE_METHODS
         and request.url.path.startswith("/api/")
         and not content_type.startswith("application/json")
     ):
