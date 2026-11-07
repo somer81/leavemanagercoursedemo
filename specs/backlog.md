@@ -26,3 +26,6 @@ step 7). Nothing lands here without that decision; noise is rejected in the tria
   — Recommendation: entegrasyon suite'i büyüyüp bir dakikaya yaklaşana kadar `integration` adımını `[fast]` yapmayı değerlendir; seçici ayrımı (`-m integration`) korunur — Deferred by: somer81, 2026-11-07, profil kararı ayrı ve küçük bir değişiklik
 - **B-5** — AC-3 testi oturumsuz erişimi yalnızca olumlu yönden kanıtlıyor (henüz oturum yok); "giriş ve sağlık dışındaki her uç oturumsuz reddedilir" negatif kapsamı yok — Source: spec 0001, review round 1 (Tests notu) — Severity: Info
   — Recommendation: oturum/giriş spec'inde (Yetkilendirme hassas alanı) herkese açık uçların tam listesini doğrulayan bir test ekle (B-1 ile birlikte) — Deferred by: somer81, 2026-11-07, oturum mekanizması bu spec'in kapsamı dışında
+
+- **B-6** — Kaba kuvvet koruması / hesap kilitleme yok (ardışık hatalı girişte gecikme veya kilit) — Source: spec 0002, clarify soru 6 — Severity: Medium
+  — Recommendation: ayrı bir spec'te (Yetkilendirme hassas alanı) hız sınırı veya artan gecikme ekle — Deferred by: somer81, 2026-11-07, kurs demosu kapsamı dışında; hata mesajı zaten hangi bilginin yanlış olduğunu açık etmiyor
