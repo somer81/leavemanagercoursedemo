@@ -13,3 +13,6 @@ step 7). Nothing lands here without that decision; noise is rejected in the tria
   — Recommendation: <the reviewer's action> — Deferred by: <name>, <YYYY-MM-DD>, <why>
   A decision deferred at bootstrap (its REPORT) uses Source: bootstrap <YYYY-MM-DD>.
 -->
+
+- **B-1** — Güvenlik başlıkları (`Content-Security-Policy: default-src 'self'`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: same-origin`; `docs/security.md` "Input & output") henüz uygulanmadı — Source: spec 0001, plan risk R6 — Severity: Medium
+  — Recommendation: oturum/giriş spec'inde (Yetkilendirme hassas alanı) entegrasyon testiyle ekle — Deferred by: somer81, 2026-11-07, walking skeleton kapsamı dışında (spec'te kriter yok)
