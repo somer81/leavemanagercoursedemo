@@ -16,3 +16,6 @@ step 7). Nothing lands here without that decision; noise is rejected in the tria
 
 - **B-1** — Güvenlik başlıkları (`Content-Security-Policy: default-src 'self'`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: same-origin`; `docs/security.md` "Input & output") henüz uygulanmadı — Source: spec 0001, plan risk R6 — Severity: Medium
   — Recommendation: oturum/giriş spec'inde (Yetkilendirme hassas alanı) entegrasyon testiyle ekle — Deferred by: somer81, 2026-11-07, walking skeleton kapsamı dışında (spec'te kriter yok)
+
+- **B-2** — starlette 1.x `TestClient`, httpx ile kullanımda `StarletteDeprecationWarning` veriyor ("install httpx2 instead") — Source: spec 0001, review round 1 (`requirements.lock`: starlette 1.10.0 + httpx 0.28.1) — Severity: Info
+  — Recommendation: httpx2'ye geçişi ayrı bir bağımlılık kararı olarak planla (`docs/security.md` Dependencies) — Deferred by: somer81, 2026-11-07, bugün bir şey kırmıyor; walking skeleton kapsamı dışında
