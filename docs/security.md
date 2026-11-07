@@ -20,12 +20,18 @@
 - **KVKK:** loglara isim veya izin gerekçesi yazılmaz, yalnızca ID; test ve seed verisi uydurmadır.
 
 ## AuthN / AuthZ
-- **AuthN:** kullanıcı adı + parola. Parolalar `hashlib.scrypt` + kullanıcı başına salt ile saklanır;
-  düz parola asla. Sunucu tarafı oturum: `secrets.token_urlsafe` token, SQLite'ta saklanır; cookie
-  `HttpOnly`, `SameSite=Strict`, production'da `Secure`; 8 saatte geçersiz olur, çıkışta silinir.
-  Giriş hatası tek mesaj: "kullanıcı adı veya parola hatalı".
+- **AuthN:** kullanıcı adı + parola. Kullanıcı adı 3–32 karakter `a-z 0-9 . _ -`, büyük-küçük harfe
+  duyarsız; parola 5–128 karakter (spec 0002). Parolalar `hashlib.scrypt` + kullanıcı başına salt ile
+  saklanır; düz parola asla; bilinmeyen kullanıcıda da sahte bir doğrulama yapılır (zamanlama farkı
+  olmasın). Sunucu tarafı oturum: `secrets.token_urlsafe` token; SQLite'ta yalnızca SHA-256 özeti
+  saklanır. Token yalnızca `session` cookie'sinde taşınır (`HttpOnly`, `SameSite=Strict`, `Path=/`;
+  `Secure` yalnızca `LEAVE_COOKIE_SECURE=1` ile — production'da zorunlu); girişten itibaren mutlak
+  8 saat geçerli, çıkışta silinir. Giriş hatası tek mesaj: "kullanıcı adı veya parola hatalı".
 - **AuthZ (hassas alan):** varsayılan red — oturum gerektirmeyen uçlar yalnızca giriş
-  (`/api/auth/login`) ve sağlık (`/api/health`, yalnızca durum alanları döner; spec 0001 R-3); diğer her uç oturum ister.
+  (`/api/auth/login`) ve sağlık (`/api/health`, yalnızca durum alanları döner; spec 0001 R-3); diğer her
+  API ucu oturum ister — `backend/tests/integration/test_default_deny.py` rota listesini uygulamadan
+  okuyarak bunu her yeni uç için denetler. Statik sayfa dosyaları (HTML/CSS/JS) herkese açıktır ve
+  veri içermez.
   Yetki kontrolü **yalnızca servis katmanında**. Çalışan yalnızca kendi verisini görür; Yönetici
   yalnızca kendi ekibinin taleplerini görür ve onaylar/reddeder; Admin izin türlerini ve hakları
   yönetir, talep onaylamaz; kimse kendi talebini onaylayamaz (BR-4). Başkasının kaydına erişim 403.

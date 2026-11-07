@@ -16,6 +16,11 @@ npm ci --prefix frontend
 # Başka bir veritabanı dosyası için ortam değişkeni (varsayılan data/leave.db; .env okunmaz):
 # LEAVE_DB_PATH=/yol/leave.db .venv/bin/python -m uvicorn --factory app.main:app_from_env --app-dir backend
 
+# Demo kullanıcıları (bir kez; parola 5–128 karakter, yalnızca ortamdan okunur):
+# admin, mert.yilmaz (yönetici), elif.kaya ve can.demir (mert.yilmaz'a bağlı çalışanlar)
+DEMO_PASSWORD=<parola> PYTHONPATH=backend .venv/bin/python -m app.seed
+# Production'da HTTPS arkasında oturum cookie'si için: LEAVE_COOKIE_SECURE=1
+
 # 3. Doğrulama (tek sözleşme; macOS'ta dash ile — docs/conventions.md, Known traps)
 ./scripts/check            # full: tek kanıt
 ./scripts/check --fast     # iç döngü

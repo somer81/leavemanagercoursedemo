@@ -35,8 +35,11 @@
 ## Error handling
 - Servis katmanı iş kuralı ihlalinde `DomainError` alt sınıfları fırlatır (`app.domain`):
   `InsufficientBalance`, `OverlappingRequest`, `NotAuthorized`, `NotFound`, `InvalidTransition`.
-- API katmanında **tek** exception handler bunları eşler: 422 kural ihlali, 403 yetkisiz,
-  404 bulunamadı, 409 çakışma / geçersiz durum geçişi.
+- API katmanında **tek** exception handler (`backend/app/api/errors.py`) bunları eşler: 422 kural
+  ihlali / biçim hatası (`INVALID_INPUT`), 401 kimlik yok (`INVALID_CREDENTIALS`, `UNAUTHENTICATED`,
+  `SESSION_EXPIRED`), 403 yetkisiz (başkasının verisi), 404 bulunamadı, 409 çakışma / geçersiz durum
+  geçişi, 415 JSON olmayan POST. Doğrulama hatası (`INVALID_INPUT`) gönderilen değeri asla geri
+  yansıtmaz (FastAPI'nin varsayılan 422 gövdesi parolayı yansıtır).
 - Hata gövdesi her zaman: `{"error": {"code": "INSUFFICIENT_BALANCE", "message": "<Türkçe mesaj>"}}`.
   Tek istisna: sağlık ucu bir hata değil durum raporudur; sorunlu durumda 503 ile
   `{"status": "unavailable", "database": "unavailable"}` döner (spec 0001).

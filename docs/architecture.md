@@ -7,7 +7,9 @@
 de framework'süz statik frontend'i sunar. Stil **klasik katmanlı (n-layer) mimaridir**: Sunum →
 API → Servis → Repository, tüm katmanların kullandığı saf bir Domain katmanıyla. Veri tek bir SQLite
 veritabanında tutulur. Gerekçe: bu boyuttaki bir kurs demosu için en tanıdık ve yeterli yapı;
-modüler monolit bilinçli olarak seçilmedi (bootstrap kararı). Giriş noktası `backend/app/main.py`
+modüler monolit bilinçli olarak seçilmedi (bootstrap kararı). Kompozisyon kökleri — katman dışında,
+katmanları birbirine bağlayan tek yerler — `backend/app/main.py` (sunucu) ve `backend/app/seed.py`
+(demo kullanıcıları komutu). Giriş noktası `backend/app/main.py`
 katmanları birbirine bağlar ve statik dosyaları sunar.
 
 ## Modules / components and ownership
