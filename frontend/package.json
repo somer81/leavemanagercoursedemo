@@ -1,0 +1,12 @@
+{
+  "name": "leave-manager-frontend",
+  "private": true,
+  "type": "module",
+  "description": "Static frontend tests only; the app itself has no build step.",
+  "engines": {
+    "node": ">=22"
+  },
+  "devDependencies": {
+    "jsdom": "29.1.1"
+  }
+}

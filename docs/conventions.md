@@ -18,7 +18,7 @@
 - FastAPI (0.1xx) + Uvicorn, Pydantic 2.x.
 - Veritabanı: SQLite, standart kütüphane `sqlite3`; ORM yok. Şema: `backend/app/repositories/schema.sql`.
 - Frontend: build adımı olmadan framework'süz HTML/CSS/ES modules; modern evergreen tarayıcılar.
-- Test: pytest 8.x + FastAPI `TestClient`; frontend için Node ≥ 22 `node --test` + jsdom.
+- Test: pytest 9.x (≥ 9.0.3; 8.x PYSEC-2026-1845 taşır) + FastAPI `TestClient`; frontend için Node ≥ 22 `node --test` + jsdom.
 - Araçlar: ruff (lint + format), mypy `--strict`, import-linter.
 - Bağımlılıklar `pyproject.toml` (major sabit) + `requirements.lock` (tam sürümler); frontend dev
   bağımlılığı `package.json` + `package-lock.json`. Kesin sürümler walking skeleton PLAN'ında seçilir.
