@@ -14,3 +14,19 @@ Thumbs.db
 
 # Claude Code personal settings (shared settings.json IS committed after init)
 .claude/settings.local.json
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.import_linter_cache/
+
+# Node (frontend test tooling only)
+node_modules/
+
+# Local SQLite databases
+*.db
+*.sqlite3
