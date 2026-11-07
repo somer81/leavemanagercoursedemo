@@ -1,6 +1,6 @@
 # Spec 0001 — Walking skeleton (yürüyen iskelet): sağlık durumu uçtan uca
 
-- Status: In progress
+- Status: Shipped
 - Mode: lite
 - Plan: `specs/plans/0001-plan.md`
 - Self-critique: done
@@ -61,30 +61,49 @@ dağıtım (deployment). Bu dilim yalnızca sonraki özelliklerin üstüne inşa
   tek kullanıcı yeteneği ve bölünemez iskelet (toolchain'siz ilk parça check'i yeşile getiremez).
 
 ## Acceptance criteria
-- [ ] AC-1 — Uygulama ve veri deposu çalışırken sağlık sorgusu "sağlıklı" durumunu ve veri deposunun erişilebilir olduğunu (veri deposuna basit bir okuma başarılı) döner.
-- [ ] AC-2 — Veri deposuna erişilemezken sağlık sorgusu "kullanılamıyor" durumunu döner ve cevapta stack trace, SQL veya dosya yolu bulunmaz.
-- [ ] AC-3 — Sağlık sorgusu oturum olmadan yanıt verir; cevap yalnızca durum alanlarını içerir.
-- [ ] AC-4 — Ana sayfa, sağlık sorgusu sürerken "Durum kontrol ediliyor…" gösterir.
-- [ ] AC-5 — Ana sayfa, sağlıklı cevapta "Sistem çalışıyor" gösterir.
-- [ ] AC-6 — Ana sayfa, "kullanılamıyor" cevabında "Veritabanına erişilemiyor" gösterir.
-- [ ] AC-7 — Ana sayfa, sunucuya ulaşamadığında veya beklenmeyen bir cevap aldığında (ağ hatası, 5xx cevap ya da JSON olmayan gövde) "Sunucuya ulaşılamıyor" gösterir.
-- [ ] AC-8 — Sayfa dili Türkçedir ve durum metni ekran okuyuculara duyurulan bir canlı bölgededir.
-- [ ] AC-9 — `./scripts/check` 7 planlı adımın hepsini çalıştırıp yeşil biter; `./scripts/check --fast` yalnızca `[fast]` adımlarını çalıştırır; residue testi iki profilde de temizdir.
-- [ ] AC-10 — Yasak bağımlılık 1–4'ten herhangi birinin ihlali `./scripts/check`'i kırmızıya düşürür.
-- [ ] AC-11 — README'deki komutlarla, depo dışındaki temiz bir klonda ortam kurulur, uygulama başlatılır ve ana sayfa "Sistem çalışıyor" gösterir.
+- [x] AC-1 — Uygulama ve veri deposu çalışırken sağlık sorgusu "sağlıklı" durumunu ve veri deposunun erişilebilir olduğunu (veri deposuna basit bir okuma başarılı) döner.
+- [x] AC-2 — Veri deposuna erişilemezken sağlık sorgusu "kullanılamıyor" durumunu döner ve cevapta stack trace, SQL veya dosya yolu bulunmaz.
+- [x] AC-3 — Sağlık sorgusu oturum olmadan yanıt verir; cevap yalnızca durum alanlarını içerir.
+- [x] AC-4 — Ana sayfa, sağlık sorgusu sürerken "Durum kontrol ediliyor…" gösterir.
+- [x] AC-5 — Ana sayfa, sağlıklı cevapta "Sistem çalışıyor" gösterir.
+- [x] AC-6 — Ana sayfa, "kullanılamıyor" cevabında "Veritabanına erişilemiyor" gösterir.
+- [x] AC-7 — Ana sayfa, sunucuya ulaşamadığında veya beklenmeyen bir cevap aldığında (ağ hatası, 5xx cevap ya da JSON olmayan gövde) "Sunucuya ulaşılamıyor" gösterir.
+- [x] AC-8 — Sayfa dili Türkçedir ve durum metni ekran okuyuculara duyurulan bir canlı bölgededir.
+- [x] AC-9 — `./scripts/check` 7 planlı adımın hepsini çalıştırıp yeşil biter; `./scripts/check --fast` yalnızca `[fast]` adımlarını çalıştırır; residue testi iki profilde de temizdir.
+- [x] AC-10 — Yasak bağımlılık 1–4'ten herhangi birinin ihlali `./scripts/check`'i kırmızıya düşürür.
+- [x] AC-11 — README'deki komutlarla, depo dışındaki temiz bir klonda ortam kurulur, uygulama başlatılır ve ana sayfa "Sistem çalışıyor" gösterir.
+
+## Evidence (VERIFY, 2026-11-07)
+Full green: CHECK GREEN (full) — CI run https://github.com/somer81/leavemanagercoursedemo/actions/runs/42374100561 @2b3e273 (check + doctor --strict success); sonraki commit'ler yalnızca `specs/` (rule 6). Yerel: CHECK GREEN (full, 7 steps, 1 s) @5d45c56; RESIDUE CLEAN (full + fast) @98ece20.
+
+| Acceptance criterion | Evidence | Status |
+|---|---|---|
+| AC-1 | `test_check_returns_ok_when_probe_succeeds`, `test_health_reports_ok_when_database_reachable` — `./scripts/check` | PASS |
+| AC-2 | `test_check_returns_unavailable_when_probe_fails`, `test_health_reports_unavailable_without_internal_details` — `./scripts/check` | PASS |
+| AC-3 | `test_health_requires_no_session_and_returns_only_status_fields` — `./scripts/check` | PASS |
+| AC-4 | `shows loading text while the health request is pending` — `./scripts/check`; S-2 | PASS |
+| AC-5 | `shows system running on an ok response` — `./scripts/check`; S-1 | PASS |
+| AC-6 | `shows database unreachable on an unavailable response` — `./scripts/check`; S-3 | PASS |
+| AC-7 | `shows server unreachable on network error`, `… on 5xx`, `… on non-JSON body` — `./scripts/check`; S-4 | PASS |
+| AC-8 | `page language is Turkish and status lives in a live region` — `./scripts/check`; S-1…S-4'te gerçek tarayıcıda okundu | PASS |
+| AC-9 | CI full (7 adım) + `./scripts/check --fast` 6 adım (`skip integration (full only)`) + residue satırları (plan Build evidence) | PASS |
+| AC-10 | Kasıtlı bozma (depo dışı klon @a6ab9bb): ihlal 1, 2, 3a `sqlite3`, 3b `fastapi`, 4a `pydantic`, 4b → her biri `BROKEN`, exit 1; check düzeyinde `CHECK FAILED (full) at step: architecture` | PASS |
+| AC-11 | Depo dışı temiz klon @a6ab9bb, README adımları (tek sapma `--port`); `/api/health` 200; ana sayfa "Sistem çalışıyor" (S-1) | PASS |
+
+UI: S-1…S-4 agent-captured, judged by somer81 at SHIP, 2026-11-07 (görüntüler repoda tutulmaz; SHIP sonrası silindi).
 
 ## Definition of Done
-- [ ] Every acceptance criterion mapped to proof (test or reproducible observation)
-- [ ] `scripts/check` green
-- [ ] Independent review done; real findings fixed, noise rejected with written rationale, deferred ones in `specs/backlog.md`
-- [ ] Docs / ADRs updated if behavior or architecture changed
-- [ ] Spec moved to `specs/done/` (it becomes immutable there)
+- [x] Every acceptance criterion mapped to proof (test or reproducible observation)
+- [x] `scripts/check` green
+- [x] Independent review done; real findings fixed, noise rejected with written rationale, deferred ones in `specs/backlog.md`
+- [x] Docs / ADRs updated if behavior or architecture changed
+- [x] Spec moved to `specs/done/` (it becomes immutable there)
 
 ## Scorecard (fill at ship — honest numbers make the process improvable)
 | Metric | Value |
 |---|---|
-| Spec revisions | |
-| Fix rounds | |
-| Review findings: real / noise / deferred | |
-| Regressions introduced | |
-| Bugs escaped to production | |
+| Spec revisions | 1 (taslak → onay, öz eleştiri katlandı) |
+| Fix rounds | 1 |
+| Review findings: real / noise / deferred | 4 / 0 / 1 (B-2) |
+| Regressions introduced | 0 |
+| Bugs escaped to production | 0 (henüz üretimde değil) |
