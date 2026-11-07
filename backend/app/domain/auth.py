@@ -35,3 +35,14 @@ class StoredSession:
     token_hash: str
     employee_id: int
     created_at: datetime
+
+
+@dataclass(frozen=True)
+class NewEmployee:
+    """An employee to create; the manager is named by username."""
+
+    username: str
+    display_name: str
+    role: Role
+    manager_username: str | None
+    password_hash: str
