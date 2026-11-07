@@ -1,64 +1,103 @@
 """Default deny: every API route needs a session except login and health (spec 0002, AC-7).
 
-Routes are read from the app itself, so a route added later is covered without editing this test.
+Routes are collected from the app's own route tree — not app.openapi(), which hides
+include_in_schema=False routes — so a route added later is covered without editing this test.
 """
 
+from collections.abc import Iterable, Iterator
 from datetime import timedelta
+from typing import Any
 
 import pytest
 from conftest import PASSWORD, START, AuthApp
+from fastapi import FastAPI
+from fastapi.routing import APIRoute
+from fastapi.staticfiles import StaticFiles
+from fastapi.testclient import TestClient
+from starlette.routing import Mount
+
+from app.main import create_app
 
 pytestmark = pytest.mark.integration
 
 PUBLIC_API = {("POST", "/api/auth/login"), ("GET", "/api/health")}
 
 
-def api_routes(app: AuthApp) -> set[tuple[str, str]]:
-    # app.openapi() is the public, prefix-aware route listing (it works with openapi_url=None).
-    paths = app.client.app.openapi()["paths"]  # type: ignore[attr-defined]
-    return {
+def _walk(routes: Iterable[Any]) -> Iterator[APIRoute]:
+    for route in routes:
+        if isinstance(route, APIRoute):
+            yield route
+        elif hasattr(route, "original_router"):  # FastAPI ≥ 0.16x wraps included routers
+            yield from _walk(route.original_router.routes)
+        elif isinstance(route, Mount) and isinstance(route.app, StaticFiles):
+            continue  # the public frontend, checked separately below
+        else:
+            raise AssertionError(f"unknown route type {type(route)!r}: extend the walk")
+
+
+def api_routes(app: FastAPI) -> set[tuple[str, str]]:
+    walked = {
+        (method, route.path)
+        for route in _walk(app.routes)
+        if route.path.startswith("/api/")
+        for method in route.methods
+    }
+    documented = {
         (method.upper(), path)
-        for path, operations in paths.items()
-        if path.startswith("/api/")
+        for path, operations in app.openapi()["paths"].items()
         for method in operations
     }
+    # A prefix the walk cannot see would show up here as a documented route it missed.
+    assert documented <= walked, documented - walked
+    return walked
 
 
-def call(app: AuthApp, method: str, path: str, session: str | None = None) -> int:
+def status_of(client: TestClient, method: str, path: str, session: str | None = None) -> int:
     concrete = path.replace("{", "").replace("}", "")  # any path parameter: a dummy value
-    app.client.cookies.clear()
+    client.cookies.clear()
     if session is not None:
-        app.client.cookies.set("session", session)
-    response = app.client.request(method, concrete, json={})
-    app.client.cookies.clear()
+        client.cookies.set("session", session)
+    response = client.request(method, concrete, json={})
+    client.cookies.clear()
     return response.status_code
 
 
-def test_public_api_routes_are_exactly_login_and_health(auth_app: AuthApp) -> None:
-    auth_app.client.cookies.clear()
-    public = {
-        (method, path)
-        for method, path in api_routes(auth_app)
-        if call(auth_app, method, path) != 401
+def public_routes(client: TestClient) -> set[tuple[str, str]]:
+    app = client.app
+    assert isinstance(app, FastAPI)
+    return {
+        (method, path) for method, path in api_routes(app) if status_of(client, method, path) != 401
     }
 
-    assert public == PUBLIC_API
+
+def test_public_api_routes_are_exactly_login_and_health(auth_app: AuthApp) -> None:
+    assert public_routes(auth_app.client) == PUBLIC_API
+
+
+def test_hidden_unprotected_route_is_detected() -> None:
+    # The check above must fail for a route someone forgot to protect and hid from the schema.
+    app = create_app(":memory:")
+    app.get("/api/hidden", include_in_schema=False)(lambda: {"data": 1})
+
+    with TestClient(app) as client:
+        assert ("GET", "/api/hidden") in public_routes(client)
 
 
 def test_protected_api_routes_reject_requests_without_valid_session(auth_app: AuthApp) -> None:
     auth_app.add_user("mert.yilmaz", "Mert Yılmaz (demo)")
     auth_app.client.post("/api/auth/login", json={"username": "mert.yilmaz", "password": PASSWORD})
     real = auth_app.client.cookies.get("session") or ""
-    auth_app.client.cookies.clear()
-    protected = api_routes(auth_app) - PUBLIC_API
+    app = auth_app.client.app
+    assert isinstance(app, FastAPI)
+    protected = api_routes(app) - PUBLIC_API
     assert protected, "expected at least one protected API route"
 
     for method, path in sorted(protected):
-        assert call(auth_app, method, path) == 401, (method, path, "no session")
-        assert call(auth_app, method, path, "uydurma") == 401, (method, path)
+        assert status_of(auth_app.client, method, path) == 401, (method, path, "no session")
+        assert status_of(auth_app.client, method, path, "uydurma") == 401, (method, path)
     auth_app.clock.current = START + timedelta(hours=8)
     for method, path in sorted(protected):
-        assert call(auth_app, method, path, real) == 401, (method, path, "expired")
+        assert status_of(auth_app.client, method, path, real) == 401, (method, path, "expired")
 
 
 def test_static_files_are_served_without_session(auth_app: AuthApp) -> None:

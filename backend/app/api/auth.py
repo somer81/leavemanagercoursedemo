@@ -41,11 +41,14 @@ def session_dependency(get_service: Callable[[], AuthService]) -> SessionDepende
     return require_session
 
 
-def auth_router(
-    get_service: Callable[[], AuthService],
-    require_session: SessionDependency,
-    cookie_secure: bool,
-) -> APIRouter:
+def _clear_cookie(response: Response, cookie_secure: bool) -> None:
+    response.delete_cookie(
+        SESSION_COOKIE, path="/", httponly=True, samesite="strict", secure=cookie_secure
+    )
+
+
+def login_router(get_service: Callable[[], AuthService], cookie_secure: bool) -> APIRouter:
+    """The one public auth route. Mounted on the public allow-list in main.py."""
     router = APIRouter()
 
     @router.post("/api/auth/login")
@@ -62,17 +65,26 @@ def auth_router(
         )
         return _identity_response(result.identity)
 
+    return router
+
+
+def session_router(
+    get_service: Callable[[], AuthService],
+    require_session: SessionDependency,
+    cookie_secure: bool,
+) -> APIRouter:
+    """Routes for a signed-in user. Mounted under the protected router in main.py."""
+    router = APIRouter()
+
     @router.get("/api/auth/me")
     def me(identity: Annotated[Identity, Depends(require_session)]) -> IdentityResponse:
         return _identity_response(identity)
 
-    @router.post("/api/auth/logout", status_code=204, dependencies=[Depends(require_session)])
+    @router.post("/api/auth/logout", status_code=204)
     def logout(response: Response, session: Annotated[str, Cookie()]) -> Response:
         get_service().logout(session)
         response.status_code = 204
-        response.delete_cookie(
-            SESSION_COOKIE, path="/", httponly=True, samesite="strict", secure=cookie_secure
-        )
+        _clear_cookie(response, cookie_secure)
         return response
 
     return router

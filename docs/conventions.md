@@ -62,6 +62,7 @@
 - `sqlite3` bağlantıyı başka thread'den kullanmayı reddeder, `TestClient` ayrı thread'de çalışır — test bağlantısında `check_same_thread=False` — from bootstrap 2026-11-07.
 - `sqlite3`'ün varsayılan tarih adapter'ları Python 3.12'den beri deprecated — tarihleri repository'de açıkça ISO metne ve geri çevir, `detect_types` kullanma — from bootstrap 2026-11-07.
 - Makinedeki varsayılan `python3` anaconda'nınkidir — venv'i `python3.13 -m venv .venv` ile kur, check her zaman `.venv/bin/python -m …` çağırır — from bootstrap 2026-11-07.
+- `app.openapi()` `include_in_schema=False` rotaları göstermez; FastAPI 0.16x `include_router` ise `app.routes`'a düz rota değil sarmalayıcı (`original_router`) ekler — güvenlik amaçlı rota taramasında rota ağacını yürü (`backend/tests/integration/test_default_deny.py`) — from spec 0002 review round 1 F-1.
 - macOS'ta `/bin/sh` bash 3.2'dir ve ANEW betiklerini ayrıştıramaz (`$( … )` içindeki `case` dalları, syntax error) — bu makinede `dash ./scripts/check` (`--fast`), `dash ./scripts/doctor`, `dash ./scripts/residue` kullan; residue check'i içeride `sh` ile çağırır, bu yüzden PATH'in başına `sh → /bin/dash` symlink'i olan bir dizin koy (`PATH="<dizin>:$PATH" dash ./scripts/residue`); CI (Ubuntu, sh = dash) etkilenmez; çekirdek betikler yerelde yamanmaz, upstream'e bildirildi — from bootstrap 2026-11-07.
 
 ## Enforced by tooling

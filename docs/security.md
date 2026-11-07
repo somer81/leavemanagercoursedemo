@@ -29,8 +29,10 @@
   8 saat geçerli, çıkışta silinir. Giriş hatası tek mesaj: "kullanıcı adı veya parola hatalı".
 - **AuthZ (hassas alan):** varsayılan red — oturum gerektirmeyen uçlar yalnızca giriş
   (`/api/auth/login`) ve sağlık (`/api/health`, yalnızca durum alanları döner; spec 0001 R-3); diğer her
-  API ucu oturum ister — `backend/tests/integration/test_default_deny.py` rota listesini uygulamadan
-  okuyarak bunu her yeni uç için denetler. Statik sayfa dosyaları (HTML/CSS/JS) herkese açıktır ve
+  API ucu oturum ister. Yapısal: `backend/app/main.py`'de açık uçlar adıyla izin listesindedir, diğer
+  her router `protected` router'ın altına (`dependencies=[Depends(require_session)]`) eklenir — asla
+  doğrudan uygulamaya. `backend/tests/integration/test_default_deny.py` rota ağacını yürüyerek
+  (gizli rotalar dahil) herkese açık listenin tam olarak bu ikisi olduğunu denetler. Statik sayfa dosyaları (HTML/CSS/JS) herkese açıktır ve
   veri içermez.
   Yetki kontrolü **yalnızca servis katmanında**. Çalışan yalnızca kendi verisini görür; Yönetici
   yalnızca kendi ekibinin taleplerini görür ve onaylar/reddeder; Admin izin türlerini ve hakları

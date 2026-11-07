@@ -7,10 +7,10 @@ import os
 from datetime import UTC, datetime
 from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import APIRouter, Depends, FastAPI
 from fastapi.staticfiles import StaticFiles
 
-from app.api.auth import auth_router, session_dependency
+from app.api.auth import login_router, session_dependency, session_router
 from app.api.errors import install_error_handling
 from app.api.health import health_router
 from app.repositories.connection import Database
@@ -48,8 +48,16 @@ def create_app(
     # No public API docs: only login and health are served without a session (docs/security.md).
     app = FastAPI(title="İzin Yöneticisi", docs_url=None, redoc_url=None, openapi_url=None)
     install_error_handling(app)
+
+    # Public allow-list: the only API routes reachable without a session (docs/security.md).
     app.include_router(health_router(lambda: health_service))
-    app.include_router(auth_router(lambda: auth_service, require_session, cookie_secure))
+    app.include_router(login_router(lambda: auth_service, cookie_secure))
+
+    # Default deny: every other API router is included here, never on the app directly.
+    protected = APIRouter(dependencies=[Depends(require_session)])
+    protected.include_router(session_router(lambda: auth_service, require_session, cookie_secure))
+    app.include_router(protected)
+
     app.mount("/", StaticFiles(directory=FRONTEND_DIR, html=True), name="frontend")
     return app
 
