@@ -1,6 +1,7 @@
 """SQLite access. Every connection goes through Database (docs/conventions.md, Known traps)."""
 
 import sqlite3
+import threading
 from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
@@ -11,13 +12,15 @@ SCHEMA = (Path(__file__).parent / "schema.sql").read_text(encoding="utf-8")
 class Database:
     """Opens connections to one SQLite database and applies the schema on first success.
 
-    ":memory:" is one database per connection, so it keeps a single shared connection.
+    ":memory:" is one database per connection, so it keeps a single shared connection; a lock
+    keeps one transaction at a time on it (worker threads would otherwise interleave commits).
     """
 
     def __init__(self, path: str) -> None:
         self._path = path
         self._shared: sqlite3.Connection | None = None
         self._schema_ready = False
+        self._lock = threading.RLock()
 
     def _open(self) -> sqlite3.Connection:
         # check_same_thread=False: TestClient and the server call from worker threads.
@@ -29,11 +32,14 @@ class Database:
     def connect(self) -> Iterator[sqlite3.Connection]:
         """Yield a connection; commit on success, roll back on error."""
         if self._path == ":memory:":
-            if self._shared is None:
-                self._shared = self._open()
-            connection = self._shared
+            with self._lock:
+                if self._shared is None:
+                    self._shared = self._open()
+                yield from self._transaction(self._shared)
         else:
-            connection = self._open()
+            yield from self._transaction(self._open())
+
+    def _transaction(self, connection: sqlite3.Connection) -> Iterator[sqlite3.Connection]:
         try:
             if not self._schema_ready:
                 connection.executescript(SCHEMA)
