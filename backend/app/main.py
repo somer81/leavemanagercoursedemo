@@ -21,7 +21,8 @@ FRONTEND_DIR = Path(__file__).resolve().parents[2] / "frontend" / "public"
 def create_app(db_path: str) -> FastAPI:
     health_service = HealthService(SqliteHealthProbe(connection_factory(db_path)))
 
-    app = FastAPI(title="İzin Yöneticisi")
+    # No public API docs: only login and health are served without a session (docs/security.md).
+    app = FastAPI(title="İzin Yöneticisi", docs_url=None, redoc_url=None, openapi_url=None)
     app.include_router(health_router(lambda: health_service))
     app.mount("/", StaticFiles(directory=FRONTEND_DIR, html=True), name="frontend")
     return app

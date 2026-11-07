@@ -37,3 +37,13 @@ def test_health_requires_no_session_and_returns_only_status_fields(
 
     assert response.status_code == 200
     assert set(response.json()) == {"status", "database"}
+
+
+@pytest.mark.parametrize("path", ["/docs", "/redoc", "/openapi.json"])
+def test_api_documentation_is_not_served_without_session(
+    client_for: ClientFactory, path: str
+) -> None:
+    # Default deny: only login and health are public (docs/security.md).
+    response = client_for(":memory:").get(path)
+
+    assert response.status_code == 404
