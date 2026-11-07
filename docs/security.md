@@ -8,8 +8,9 @@
 - Demo kullanıcı parolaları kodda değil `.env` içindedir (`DEMO_PASSWORD`); repoda yalnızca `.env.example`.
 
 ## Input & output
-- Sınır doğrulaması API katmanında Pydantic şemalarıyla (tip, uzunluk, tarih biçimi); iş kuralı
-  doğrulaması serviste.
+- Sınır doğrulaması API katmanında Pydantic şemalarıyla (tip, tarih biçimi); iş kuralı ve biçim
+  kuralı doğrulaması serviste. Kimlik bilgisi biçim/uzunluk kurallarının (kullanıcı adı, parola)
+  tek kaynağı servis katmanıdır; Pydantic yalnızca tipleri denetler (spec 0002, A-3).
 - Tüm SQL parametrelidir.
 - Frontend kullanıcı verisini DOM'a yalnızca `textContent` ile yazar; `innerHTML` yasaktır (XSS).
 - Güvenlik başlıkları: `Content-Security-Policy: default-src 'self'`, `X-Content-Type-Options: nosniff`,
