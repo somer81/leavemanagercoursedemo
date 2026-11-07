@@ -1,3 +1,30 @@
+# İzin Yöneticisi — kurulum ve çalıştırma
+
+Çalışanların izin talebi açtığı, yöneticilerin onaylayıp reddettiği küçük bir web uygulaması;
+ANEW sürecini gösteren bir kurs demosu. Proje kuralları: [`AGENTS.md`](AGENTS.md).
+
+**Gerekenler:** Python 3.13, Node.js 22 veya üstü (yalnızca frontend testleri için).
+
+```sh
+# 1. Ortam (bir kez)
+python3.13 -m venv .venv
+.venv/bin/python -m pip install -r requirements.lock
+npm ci --prefix frontend
+
+# 2. Uygulamayı başlat → http://127.0.0.1:8000
+.venv/bin/python -m uvicorn --factory app.main:app_from_env --app-dir backend
+# Başka bir veritabanı dosyası için ortam değişkeni (varsayılan data/leave.db; .env okunmaz):
+# LEAVE_DB_PATH=/yol/leave.db .venv/bin/python -m uvicorn --factory app.main:app_from_env --app-dir backend
+
+# 3. Doğrulama (tek sözleşme; macOS'ta dash ile — docs/conventions.md, Known traps)
+./scripts/check            # full: tek kanıt
+./scripts/check --fast     # iç döngü
+```
+
+Ana sayfa "Sistem çalışıyor" gösterir; sağlık ucu: `GET /api/health`.
+
+---
+
 # ANEW — AI Native Engineering Workspace
 
 **A general-purpose, technology-agnostic bootstrap for building software with AI — under control.**

@@ -1,0 +1,73 @@
+[project]
+name = "leave-manager"
+version = "0.1.0"
+description = "İzin Yöneticisi — ANEW kurs demosu"
+requires-python = ">=3.13,<3.14"
+# Major versions pinned here; exact versions live in requirements.lock (docs/conventions.md).
+dependencies = [
+    "fastapi>=0.162,<1",
+    "uvicorn>=0.54,<1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=9.0.3,<10",
+    "httpx>=0.28,<1",
+    "ruff>=0.17,<1",
+    "mypy>=2.4,<3",
+    "import-linter>=2.16,<3",
+]
+
+[tool.ruff]
+target-version = "py313"
+src = ["backend"]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "B", "UP", "S"]
+# N818 off: domain error names are fixed by docs/conventions.md (InsufficientBalance, NotAuthorized…).
+ignore = ["N818"]
+
+[tool.ruff.lint.per-file-ignores]
+"backend/tests/**" = ["S101"]
+
+[tool.mypy]
+strict = true
+mypy_path = "backend"
+explicit_package_bases = true
+
+[tool.pytest.ini_options]
+pythonpath = ["backend"]
+testpaths = ["backend/tests"]
+addopts = "--strict-markers"
+markers = [
+    "integration: API → service → real SQLite; full profile only (docs/testing.md)",
+]
+
+# Forbidden dependencies 1–4 of docs/architecture.md; app.main is the composition root (unlisted).
+[tool.importlinter]
+root_package = "app"
+include_external_packages = true
+
+[[tool.importlinter.contracts]]
+name = "1. One direction: api -> services -> repositories -> domain"
+type = "layers"
+layers = ["app.api", "app.services", "app.repositories", "app.domain"]
+
+[[tool.importlinter.contracts]]
+name = "2. No layer skipping: api never imports repositories"
+type = "forbidden"
+source_modules = ["app.api"]
+forbidden_modules = ["app.repositories"]
+
+[[tool.importlinter.contracts]]
+name = "3. Services stay pure: no fastapi, no sqlite3"
+type = "forbidden"
+source_modules = ["app.services"]
+forbidden_modules = ["fastapi", "sqlite3"]
+
+[[tool.importlinter.contracts]]
+name = "4. Domain imports no framework"
+type = "forbidden"
+source_modules = ["app.domain"]
+forbidden_modules = ["fastapi", "pydantic", "sqlite3"]

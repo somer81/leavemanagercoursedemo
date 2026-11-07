@@ -1,0 +1,29 @@
+:root {
+  --text: #1a1a1a;
+  --background: #ffffff;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, sans-serif;
+  color: var(--text);
+  background: var(--background);
+}
+
+main {
+  max-width: 40rem;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+.health-status {
+  font-size: 1.25rem;
+}
+
+/* No motion anywhere (docs/testing.md, Determinism). */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
