@@ -29,3 +29,6 @@ step 7). Nothing lands here without that decision; noise is rejected in the tria
 
 - **B-6** — Kaba kuvvet koruması / hesap kilitleme yok (ardışık hatalı girişte gecikme veya kilit) — Source: spec 0002, clarify soru 6 — Severity: Medium
   — Recommendation: ayrı bir spec'te (Yetkilendirme hassas alanı) hız sınırı veya artan gecikme ekle — Deferred by: somer81, 2026-11-07, kurs demosu kapsamı dışında; hata mesajı zaten hangi bilginin yanlış olduğunu açık etmiyor
+
+- **B-7** — Süresi dolan oturum satırları yalnızca o token tekrar gönderilirse siliniyor; çıkış yapılmadan bırakılanlar (`employee_id`, `created_at`) birikiyor — Source: spec 0002, review round 1 F-6 (`backend/app/services/auth_service.py`) — Severity: Low
+  — Recommendation: login sırasında `created_at < now - 8 saat` olan oturumları sil (KVKK saklama süresi) — Deferred by: somer81, 2026-11-07, bugün bir sızıntı yok; ayrı küçük değişiklik
