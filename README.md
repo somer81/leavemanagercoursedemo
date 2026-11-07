@@ -10,10 +10,11 @@ ANEW sürecini gösteren bir kurs demosu. Proje kuralları: [`AGENTS.md`](AGENTS
 python3.13 -m venv .venv
 .venv/bin/python -m pip install -r requirements.lock
 npm ci --prefix frontend
-cp .env.example .env            # isteğe bağlı; varsayılan veritabanı data/leave.db
 
 # 2. Uygulamayı başlat → http://127.0.0.1:8000
 .venv/bin/python -m uvicorn --factory app.main:app_from_env --app-dir backend
+# Başka bir veritabanı dosyası için ortam değişkeni (varsayılan data/leave.db; .env okunmaz):
+# LEAVE_DB_PATH=/yol/leave.db .venv/bin/python -m uvicorn --factory app.main:app_from_env --app-dir backend
 
 # 3. Doğrulama (tek sözleşme; macOS'ta dash ile — docs/conventions.md, Known traps)
 ./scripts/check            # full: tek kanıt
