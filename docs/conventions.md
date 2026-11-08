@@ -47,9 +47,10 @@
 - Kullanıcıya stack trace, SQL, dosya yolu veya başka bir çalışanın verisi asla sızmaz. Beklenmeyen
   hata → 500 + genel mesaj; ayrıntı yalnızca sunucu logunda, kişisel veri içermeden (`docs/security.md`).
 - SQLite hataları (`backend/app/repositories/connection.py`): yalnızca erişilebilirlik hataları
-  (bağlantı açılamıyor, `OperationalError`) ERROR seviyesinde loglanıp `DataStoreUnavailable` (503)
-  olur. `IntegrityError` ve diğer sqlite3 hataları bir hata ya da iş kuralı ihlalidir: maskelenmez,
-  yayılır → 500 + log (spec 0002 review round 2 N-2). Bir iş kuralı kısıtı (ör. çakışma) serviste
+  (bağlantı açılamıyor, `OperationalError`, tam tipi `DatabaseError` olanlar — "file is not a
+  database", bozuk dosya) ERROR seviyesinde loglanıp `DataStoreUnavailable` (503) olur.
+  `IntegrityError` ve `DatabaseError`'ın diğer alt sınıfları bir hata ya da iş kuralı ihlalidir:
+  maskelenmez, yayılır → 500 + log (spec 0002 review round 2 N-2, round 3 N3-1). Bir iş kuralı kısıtı (ör. çakışma) serviste
   kendi `DomainError`'ına çevrilir, 503'e değil.
 
 ## Data rules

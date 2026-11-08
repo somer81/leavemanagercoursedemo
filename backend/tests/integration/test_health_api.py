@@ -47,3 +47,18 @@ def test_api_documentation_is_not_served_without_session(
     response = client_for(":memory:").get(path)
 
     assert response.status_code == 404
+
+
+def test_health_reports_unavailable_for_a_file_that_is_not_a_database(
+    client_for: ClientFactory, tmp_path: Path
+) -> None:
+    # SQLite opens lazily: "file is not a database" surfaces on the first statement.
+    not_a_database = tmp_path / "leave.db"
+    not_a_database.write_bytes(b"this is not an sqlite database file " * 128)
+
+    response = client_for(str(not_a_database)).get("/api/health")
+
+    assert response.status_code == 503
+    assert response.json() == {"status": "unavailable", "database": "unavailable"}
+    for leak in ("Traceback", "sqlite", "SELECT", str(tmp_path)):
+        assert leak not in response.text

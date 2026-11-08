@@ -14,6 +14,15 @@ SCHEMA = (Path(__file__).parent / "schema.sql").read_text(encoding="utf-8")
 logger = logging.getLogger(__name__)
 
 
+def _is_reachability(error: sqlite3.Error) -> bool:
+    """Locked, unopenable, not a database, corrupt — the store, not our code, is the problem.
+
+    "file is not a database" and "malformed" arrive as plain DatabaseError, not a subclass;
+    IntegrityError, ProgrammingError and the other subclasses are bugs or rule violations.
+    """
+    return isinstance(error, sqlite3.OperationalError) or type(error) is sqlite3.DatabaseError
+
+
 def _unavailable(error: sqlite3.Error) -> DataStoreUnavailable:
     # sqlite messages carry no bound parameters, so logging them leaks no personal data.
     logger.error("data store unavailable: %s: %s", type(error).__name__, error)
@@ -46,7 +55,8 @@ class Database:
     def connect(self) -> Iterator[sqlite3.Connection]:
         """Yield a connection; commit on success, roll back on error.
 
-        Reachability errors (opening, OperationalError) leave as DataStoreUnavailable, logged.
+        Reachability errors (opening, OperationalError, plain DatabaseError such as "file is not a
+        database") leave as DataStoreUnavailable, logged.
         Other sqlite3 errors (IntegrityError, ProgrammingError…) are bugs or rule violations: they
         propagate unchanged, after the rollback (docs/conventions.md, Error handling).
         """
@@ -65,9 +75,11 @@ class Database:
                 self._schema_ready = True
             yield connection
             connection.commit()
-        except sqlite3.OperationalError as error:
+        except sqlite3.DatabaseError as error:
             with suppress(sqlite3.Error):
                 connection.rollback()
+            if not _is_reachability(error):
+                raise
             raise _unavailable(error) from error
         except BaseException:
             with suppress(sqlite3.Error):
