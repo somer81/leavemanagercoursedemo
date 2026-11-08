@@ -1,6 +1,7 @@
 """Data-store probe: a trivial read proves the database answers.
 
-Database.connect turns any sqlite3 error into DataStoreUnavailable, which the service reports.
+Database.connect turns reachability errors (unopenable, locked, not a database, corrupt) into
+DataStoreUnavailable, which the service reports as "unavailable".
 """
 
 from app.repositories.connection import Database
