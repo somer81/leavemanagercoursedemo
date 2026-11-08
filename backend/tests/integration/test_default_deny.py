@@ -10,7 +10,7 @@ from typing import Any
 
 import pytest
 from conftest import PASSWORD, START, AuthApp
-from fastapi import FastAPI
+from fastapi import APIRouter, FastAPI
 from fastapi.routing import APIRoute
 from fastapi.staticfiles import StaticFiles
 from fastapi.testclient import TestClient
@@ -23,12 +23,16 @@ pytestmark = pytest.mark.integration
 PUBLIC_API = {("POST", "/api/auth/login"), ("GET", "/api/health")}
 
 
-def _walk(routes: Iterable[Any]) -> Iterator[APIRoute]:
+def _walk(routes: Iterable[Any], prefix: str = "") -> Iterator[tuple[str, APIRoute]]:
+    """Yield (full path, route). Paths inside an included router omit its include prefix."""
     for route in routes:
         if isinstance(route, APIRoute):
-            yield route
+            yield prefix + route.path, route
         elif hasattr(route, "original_router"):  # FastAPI ≥ 0.16x wraps included routers
-            yield from _walk(route.original_router.routes)
+            context = getattr(route, "include_context", None)
+            if context is None or not hasattr(context, "prefix"):
+                raise AssertionError("included router without a readable prefix: extend the walk")
+            yield from _walk(route.original_router.routes, prefix + context.prefix)
         elif isinstance(route, Mount) and isinstance(route.app, StaticFiles):
             continue  # the public frontend, checked separately below
         else:
@@ -37,9 +41,9 @@ def _walk(routes: Iterable[Any]) -> Iterator[APIRoute]:
 
 def api_routes(app: FastAPI) -> set[tuple[str, str]]:
     walked = {
-        (method, route.path)
-        for route in _walk(app.routes)
-        if route.path.startswith("/api/")
+        (method, path)
+        for path, route in _walk(app.routes)
+        if path.startswith("/api/")
         for method in route.methods
     }
     documented = {
@@ -75,12 +79,19 @@ def test_public_api_routes_are_exactly_login_and_health(auth_app: AuthApp) -> No
 
 
 def test_hidden_unprotected_route_is_detected() -> None:
-    # The check above must fail for a route someone forgot to protect and hid from the schema.
+    # The check above must fail for a route someone forgot to protect and hid from the schema —
+    # added directly, or through a router included with a prefix.
     app = create_app(":memory:")
     app.get("/api/hidden", include_in_schema=False)(lambda: {"data": 1})
+    router = APIRouter()
+    router.get("/secret", include_in_schema=False)(lambda: {"data": 2})
+    app.include_router(router, prefix="/api/x")
 
     with TestClient(app) as client:
-        assert ("GET", "/api/hidden") in public_routes(client)
+        public = public_routes(client)
+
+    assert ("GET", "/api/hidden") in public
+    assert ("GET", "/api/x/secret") in public
 
 
 def test_protected_api_routes_reject_requests_without_valid_session(auth_app: AuthApp) -> None:
