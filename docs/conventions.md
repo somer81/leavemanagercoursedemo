@@ -38,13 +38,19 @@
 - API katmanında **tek** exception handler (`backend/app/api/errors.py`) bunları eşler: 422 kural
   ihlali / biçim hatası (`INVALID_INPUT`), 401 kimlik yok (`INVALID_CREDENTIALS`, `UNAUTHENTICATED`,
   `SESSION_EXPIRED`), 403 yetkisiz (başkasının verisi), 404 bulunamadı, 409 çakışma / geçersiz durum
-  geçişi, 415 JSON olmayan POST. Doğrulama hatası (`INVALID_INPUT`) gönderilen değeri asla geri
+  geçişi, 415 JSON olmayan durum değiştiren istek (GET/HEAD/OPTIONS dışı), 503 veri deposuna
+  erişilemiyor (`DATA_STORE_UNAVAILABLE`), 500 beklenmeyen hata (`INTERNAL_ERROR`). Doğrulama hatası (`INVALID_INPUT`) gönderilen değeri asla geri
   yansıtmaz (FastAPI'nin varsayılan 422 gövdesi parolayı yansıtır).
 - Hata gövdesi her zaman: `{"error": {"code": "INSUFFICIENT_BALANCE", "message": "<Türkçe mesaj>"}}`.
   Tek istisna: sağlık ucu bir hata değil durum raporudur; sorunlu durumda 503 ile
   `{"status": "unavailable", "database": "unavailable"}` döner (spec 0001).
 - Kullanıcıya stack trace, SQL, dosya yolu veya başka bir çalışanın verisi asla sızmaz. Beklenmeyen
   hata → 500 + genel mesaj; ayrıntı yalnızca sunucu logunda, kişisel veri içermeden (`docs/security.md`).
+- SQLite hataları (`backend/app/repositories/connection.py`): yalnızca erişilebilirlik hataları
+  (bağlantı açılamıyor, `OperationalError`) ERROR seviyesinde loglanıp `DataStoreUnavailable` (503)
+  olur. `IntegrityError` ve diğer sqlite3 hataları bir hata ya da iş kuralı ihlalidir: maskelenmez,
+  yayılır → 500 + log (spec 0002 review round 2 N-2). Bir iş kuralı kısıtı (ör. çakışma) serviste
+  kendi `DomainError`'ına çevrilir, 503'e değil.
 
 ## Data rules
 - İzin tarihleri saatsiz `date`, ISO 8601 `YYYY-MM-DD`; saat dilimine göre kaymaz.

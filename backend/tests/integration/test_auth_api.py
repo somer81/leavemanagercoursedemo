@@ -2,13 +2,16 @@
 
 import hashlib
 import logging
+import sqlite3
 from datetime import timedelta
 from pathlib import Path
 
 import pytest
 from conftest import PASSWORD, START, AuthApp, ClientFactory
+from fastapi.testclient import TestClient
 
 from app.domain.auth import Role
+from app.main import create_app
 
 pytestmark = pytest.mark.integration
 
@@ -214,3 +217,30 @@ def test_state_changing_methods_without_json_are_rejected(auth_app: AuthApp, met
 
     assert response.status_code == 415
     assert response.json()["error"]["code"] == "UNSUPPORTED_MEDIA_TYPE"
+
+
+def test_unexpected_error_returns_500_envelope_and_is_logged(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    app = create_app(":memory:")
+
+    def boom() -> None:
+        raise sqlite3.IntegrityError("UNIQUE constraint failed: employees.username")
+
+    app.add_api_route("/boom", boom)
+    app.router.routes.insert(0, app.router.routes.pop())  # ahead of the static mount at "/"
+
+    with TestClient(app, raise_server_exceptions=False) as client:
+        response = client.get("/boom")
+
+    assert response.status_code == 500
+    assert response.json() == {
+        "error": {"code": "INTERNAL_ERROR", "message": "Beklenmeyen bir hata oluştu."}
+    }
+    assert "UNIQUE" not in response.text
+    assert any(
+        "IntegrityError" in record.getMessage() + (record.exc_text or "")
+        or (record.exc_info and record.exc_info[0] is sqlite3.IntegrityError)
+        for record in caplog.records
+        if record.levelno >= logging.ERROR
+    )

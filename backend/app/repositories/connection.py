@@ -1,5 +1,6 @@
 """SQLite access. Every connection goes through Database (docs/conventions.md, Known traps)."""
 
+import logging
 import sqlite3
 import threading
 from collections.abc import Iterator
@@ -9,6 +10,14 @@ from pathlib import Path
 from app.domain.errors import DataStoreUnavailable
 
 SCHEMA = (Path(__file__).parent / "schema.sql").read_text(encoding="utf-8")
+
+logger = logging.getLogger(__name__)
+
+
+def _unavailable(error: sqlite3.Error) -> DataStoreUnavailable:
+    # sqlite messages carry no bound parameters, so logging them leaks no personal data.
+    logger.error("data store unavailable: %s: %s", type(error).__name__, error)
+    return DataStoreUnavailable()
 
 
 class Database:
@@ -30,14 +39,16 @@ class Database:
             connection = sqlite3.connect(self._path, check_same_thread=False)
             connection.execute("PRAGMA foreign_keys = ON")
         except sqlite3.Error as error:
-            raise DataStoreUnavailable() from error
+            raise _unavailable(error) from error
         return connection
 
     @contextmanager
     def connect(self) -> Iterator[sqlite3.Connection]:
         """Yield a connection; commit on success, roll back on error.
 
-        Every sqlite3 error leaves as DataStoreUnavailable, so callers never see driver details.
+        Reachability errors (opening, OperationalError) leave as DataStoreUnavailable, logged.
+        Other sqlite3 errors (IntegrityError, ProgrammingError…) are bugs or rule violations: they
+        propagate unchanged, after the rollback (docs/conventions.md, Error handling).
         """
         if self._path == ":memory:":
             with self._lock:
@@ -54,10 +65,10 @@ class Database:
                 self._schema_ready = True
             yield connection
             connection.commit()
-        except sqlite3.Error as error:
+        except sqlite3.OperationalError as error:
             with suppress(sqlite3.Error):
                 connection.rollback()
-            raise DataStoreUnavailable() from error
+            raise _unavailable(error) from error
         except BaseException:
             with suppress(sqlite3.Error):
                 connection.rollback()

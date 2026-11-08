@@ -3,6 +3,7 @@
 Bodies are always {"error": {"code", "message"}} and never echo what the client sent.
 """
 
+import logging
 from collections.abc import Awaitable, Callable
 
 from fastapi import FastAPI, Request, Response
@@ -17,6 +18,8 @@ from app.domain.errors import (
     SessionExpired,
     Unauthenticated,
 )
+
+logger = logging.getLogger(__name__)
 
 _MAPPING: dict[type[DomainError], tuple[int, str, str]] = {
     InvalidInput: (422, "INVALID_INPUT", "Geçersiz giriş."),
@@ -35,6 +38,12 @@ async def _domain_error(_: Request, error: Exception) -> JSONResponse:
     mapped = _MAPPING.get(type(error)) if isinstance(error, DomainError) else None
     status, code, message = mapped or (500, "INTERNAL_ERROR", "Beklenmeyen bir hata oluştu.")
     return error_response(status, code, message)
+
+
+async def _unexpected_error(_: Request, error: Exception) -> JSONResponse:
+    # Detail goes to the server log only; the client gets the generic envelope.
+    logger.error("unexpected error: %s", type(error).__name__, exc_info=error)
+    return error_response(500, "INTERNAL_ERROR", "Beklenmeyen bir hata oluştu.")
 
 
 async def _validation_error(_: Request, __: Exception) -> JSONResponse:
@@ -61,5 +70,6 @@ async def _json_only(
 
 def install_error_handling(app: FastAPI) -> None:
     app.add_exception_handler(DomainError, _domain_error)
+    app.add_exception_handler(Exception, _unexpected_error)
     app.add_exception_handler(RequestValidationError, _validation_error)
     app.middleware("http")(_json_only)
